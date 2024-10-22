@@ -11,6 +11,10 @@ const r1 = readline.createInterface({
 
 let username = "";
 
+function generateHash(message) {
+    return crypto.createHash('sha256').update(message).digest('hex');
+}
+
 socket.on("connect", () => {
     console.log("Connected to the server");
 
@@ -29,11 +33,16 @@ socket.on("connect", () => {
 });
 
 socket.on("message", (data) => {
-    
-    const { username: senderUsername, message: senderMessage} = data;
+    const { username: senderUsername, message: senderMessage, hash: originalHash } = data;
 
-    if (senderUsername != username){
-        console.log(`${senderUsername}: ${senderMessage}`);
+    if (senderUsername !== username) {
+        // Check if the message was modified by comparing the hashes
+        const computedHash = generateHash(senderMessage);
+        if (computedHash === originalHash) {
+            console.log(`${senderUsername}: ${senderMessage} (message verified)`);
+        } else {
+            console.log(`${senderUsername}: ${senderMessage} (WARNING: message modified!)`);
+        }
         r1.prompt();
     }
 });
